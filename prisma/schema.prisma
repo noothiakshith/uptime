@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id              Int            @id @default(autoincrement())
+  email           String         @unique
+  notificationEmail String       // Email address to send notifications
+  password        String         // Hashed password (if using email/password auth)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  notifications   Notification[] // Relationship to Notification table
+}
+
+model Website {
+  id              Int            @id @default(autoincrement())
+  url             String         @unique
+  name            String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  downtimeLogs    DowntimeLog[]  // Relationship to DowntimeLog table
+}
+
+model DowntimeLog {
+  id              Int            @id @default(autoincrement())
+  websiteId       Int
+  website         Website        @relation(fields: [websiteId], references: [id])
+  region          String         // Region where the check was performed (e.g., "North America")
+  status          String         // Status of the website ("up" or "down")
+  startTime       DateTime       // Timestamp when the downtime started
+  endTime         DateTime?      // Timestamp when the downtime ended (null if still down)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  notifications   Notification[] // Relationship to Notification table
+}
+
+model Notification {
+  id              Int            @id @default(autoincrement())
+  userId          Int
+  user            User           @relation(fields: [userId], references: [id])
+  downtimeLogId   Int
+  downtimeLog     DowntimeLog    @relation(fields: [downtimeLogId], references: [id])
+  sentAt          DateTime       @default(now()) // Timestamp when the notification was sent
+  status          String         // Status of the notification (e.g., "sent", "failed")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
